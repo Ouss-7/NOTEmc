@@ -1,0 +1,102 @@
+/* Modern UI Styling */
+
+/* Glassmorphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+}
+
+/* Semi-transparent borders */
+.border-translucent {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive grid layout */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+/* Text hierarchy with opacity */
+.text-primary {
+  color: white;
+}
+
+.text-secondary {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.text-tertiary {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.text-disabled {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Card styling */
+.modern-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.modern-card:hover {
+  transform: translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Progress bars */
+.progress-container {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  height: 0.625rem;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 9999px;
+}
+
+.progress-positive {
+  background-color: rgba(16, 185, 129, 0.8); /* emerald-500/80 */
+}
+
+.progress-neutral {
+  background-color: rgba(59, 130, 246, 0.8); /* blue-500/80 */
+}
+
+.progress-negative {
+  background-color: rgba(239, 68, 68, 0.8); /* rose-500/80 */
+}

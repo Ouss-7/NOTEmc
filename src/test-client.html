@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test Client</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            background-color: #eee;
+            border: 1px solid #ddd;
+        }
+        .tab.active {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            border-left: 5px solid #4CAF50;
+        }
+        .error {
+            border-left-color: #f44336;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Authentication Test Client</h1>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="login">Login</div>
+            <div class="tab" data-tab="register">Register</div>
+            <div class="tab" data-tab="test">Test API</div>
+        </div>
+        
+        <div class="tab-content active" id="login">
+            <h2>Login</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" value="test@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" value="password123" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+            <div id="login-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="tab-content" id="register">
+            <h2>Register</h2>
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="register-username">Username:</label>
+                    <input type="text" id="register-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email:</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password:</label>
+                    <input type="password" id="register-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-firstname">First Name:</label>
+                    <input type="text" id="register-firstname">
+                </div>
+                <div class="form-group">
+                    <label for="register-lastname">Last Name:</label>
+                    <input type="text" id="register-lastname">
+                </div>
+                <button type="submit">Register</button>
+            </form>
+            <div id="register-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="tab-content" id="test">
+            <h2>Test API</h2>
+            <button id="test-api">Test API Connection</button>
+            <div id="test-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:3005/api';
+        
+        // Tab Switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Login Form
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                const resultElement = document.getElementById('login-result');
+                
+                if (response.ok) {
+                    resultElement.classList.remove('error');
+                    resultElement.innerHTML = `
+                        <h3>Login Successful</h3>
+                        <p>Welcome back, ${data.username || data.email}!</p>
+                        <p>Your token: </p>
+                        <pre>${data.token}</pre>
+                    `;
+                    
+                    // Store token in localStorage
+                    localStorage.setItem('auth_token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data));
+                } else {
+                    resultElement.classList.add('error');
+                    resultElement.innerHTML = `
+                        <h3>Login Failed</h3>
+                        <p>${data.message || 'An error occurred during login.'}</p>
+                    `;
+                }
+                
+                resultElement.style.display = 'block';
+            } catch (error) {
+                console.error('Login error:', error);
+                const resultElement = document.getElementById('login-result');
+                resultElement.classList.add('error');
+                resultElement.innerHTML = `
+                    <h3>Network Error</h3>
+                    <p>Could not connect to the server. Please check if the server is running.</p>
+                    <p>Error details: ${error.message}</p>
+                `;
+                resultElement.style.display = 'block';
+            }
+        });
+        
+        // Register Form
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const firstName = document.getElementById('register-firstname').value;
+            const lastName = document.getElementById('register-lastname').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, email, password, firstName, lastName })
+                });
+                
+                const data = await response.json();
+                const resultElement = document.getElementById('register-result');
+                
+                if (response.ok) {
+                    resultElement.classList.remove('error');
+                    resultElement.innerHTML = `
+                        <h3>Registration Successful</h3>
+                        <p>Welcome, ${data.username || data.email}!</p>
+                        <p>Your token: </p>
+                        <pre>${data.token}</pre>
+                    `;
+                    
+                    // Store token in localStorage
+                    localStorage.setItem('auth_token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data));
+                } else {
+                    resultElement.classList.add('error');
+                    resultElement.innerHTML = `
+                        <h3>Registration Failed</h3>
+                        <p>${data.message || 'An error occurred during registration.'}</p>
+                    `;
+                }
+                
+                resultElement.style.display = 'block';
+            } catch (error) {
+                console.error('Registration error:', error);
+                const resultElement = document.getElementById('register-result');
+                resultElement.classList.add('error');
+                resultElement.innerHTML = `
+                    <h3>Network Error</h3>
+                    <p>Could not connect to the server. Please check if the server is running.</p>
+                    <p>Error details: ${error.message}</p>
+                `;
+                resultElement.style.display = 'block';
+            }
+        });
+        
+        // Test API
+        document.getElementById('test-api').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/test`);
+                const data = await response.json();
+                const resultElement = document.getElementById('test-result');
+                
+                resultElement.classList.remove('error');
+                resultElement.innerHTML = `
+                    <h3>API Test Successful</h3>
+                    <p>Server response: ${data.message}</p>
+                `;
+                resultElement.style.display = 'block';
+            } catch (error) {
+                console.error('API test error:', error);
+                const resultElement = document.getElementById('test-result');
+                resultElement.classList.add('error');
+                resultElement.innerHTML = `
+                    <h3>API Test Failed</h3>
+                    <p>Could not connect to the server. Please check if the server is running.</p>
+                    <p>Error details: ${error.message}</p>
+                `;
+                resultElement.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

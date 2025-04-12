@@ -1,0 +1,116 @@
+# Project Rules and Patterns
+
+## Code Organization
+
+1. **Directory Structure**
+   - All source code under `src/`
+   - Configuration files at root level
+   - Tests parallel to source files
+   - Documentation in `docs/`
+
+2. **File Naming**
+   - Controllers: `*Controller.js`
+   - Services: `*Service.js`
+   - Models: `*.js` (PascalCase)
+   - Middleware: `*Middleware.js`
+   - Utils: `*.util.js`
+
+3. **Code Style**
+   - ES6+ features preferred
+   - Async/await over promises
+   - Error handling with middleware
+   - Validation with Joi schemas
+
+## Development Workflow
+
+1. **Version Control**
+   - Feature branches from main
+   - Conventional commits
+   - PR for all changes
+   - Squash merge
+
+2. **Testing**
+   - Unit tests for business logic
+   - Integration tests for APIs
+   - Test files next to source
+   - Mock external services
+
+3. **Documentation**
+   - JSDoc for functions
+   - README for each component
+   - API documentation with examples
+   - Update memory bank after changes
+
+## Architecture Patterns
+
+1. **Service Layer**
+   - Business logic in services
+   - Controllers for request handling
+   - Models for data structure
+   - Utils for shared functionality
+
+2. **Error Handling**
+   - Custom AppError class
+   - Centralized error middleware
+   - Consistent error format
+   - Detailed logging
+
+3. **Caching**
+   - Redis for distributed cache
+   - Cache invalidation events
+   - TTL for all cached items
+   - Cache warming strategies
+
+4. **Queue Management**
+   - Bull for job queues
+   - Retry with backoff
+   - Dead letter queues
+   - Job progress tracking
+
+## Tool Integration
+
+1. **Registration**
+   - Tool metadata in MongoDB
+   - Validation schema required
+   - Rate limit configuration
+   - Authentication details
+
+2. **Processing**
+   - Async job queues
+   - Result caching
+   - Error recovery
+   - Progress tracking
+
+3. **Results**
+   - Standardized format
+   - Cache with TTL
+   - Batch processing
+   - Partial updates
+
+## Security
+
+1. **Authentication**
+   - JWT for API auth
+   - Tool-specific keys
+   - Rate limiting
+   - Request validation
+
+2. **Data Protection**
+   - Encryption at rest
+   - Secure communication
+   - Input sanitization
+   - Access control
+
+## Monitoring
+
+1. **Logging**
+   - Winston for logging
+   - Structured log format
+   - Log levels properly used
+   - Context in logs
+
+2. **Metrics**
+   - Health check endpoints
+   - Performance monitoring
+   - Error tracking
+   - Usage analytics
