@@ -25,7 +25,7 @@ export const fetchTools = createAsyncThunk(
     try {
       // Direct API call to ensure no mock data
       console.log('Fetching tools directly from backend');
-      const response = await axios.get('http://localhost:3001/api/tools');
+      const response = await axios.get('http://localhost:3005/api/tools');
       console.log('Tools response:', response.data);
       
       // Extract tools from response

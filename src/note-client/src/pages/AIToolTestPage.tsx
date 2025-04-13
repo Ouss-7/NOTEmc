@@ -43,7 +43,7 @@ const AIToolTestPage: React.FC = () => {
     // Directly fetch tools from the backend
     const fetchToolsDirectly = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/tools');
+        const response = await axios.get('http://localhost:3005/api/tools');
         console.log('Tools fetched directly:', response.data);
       } catch (error) {
         console.error('Error fetching tools directly:', error);
@@ -70,7 +70,7 @@ const AIToolTestPage: React.FC = () => {
       const interval = setInterval(async () => {
         try {
           // Direct API call to ensure no caching or mock data
-          const response = await axios.get(`http://localhost:3001/api/process/${jobId}`);
+          const response = await axios.get(`http://localhost:3005/api/process/${jobId}`);
           const updatedJob = response.data;
           console.log('Job status update:', updatedJob);
           
@@ -139,7 +139,7 @@ const AIToolTestPage: React.FC = () => {
       
       // Direct API call to ensure no mock data
       console.log('Submitting job with data:', { noteId, toolIds: selectedTools, content: noteContent });
-      const response = await axios.post('http://localhost:3001/api/process', {
+      const response = await axios.post('http://localhost:3005/api/process', {
         noteId,
         toolIds: selectedTools,
         content: noteContent

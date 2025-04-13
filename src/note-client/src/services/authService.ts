@@ -90,7 +90,22 @@ export const authApi = {
     }
     
     try {
-      const response = await api.post(`${AUTH_ENDPOINTS.LOGIN}`, { email, password });
+      console.log('Attempting to login user:', email);
+      console.log('API endpoint:', API_CONFIG.BASE_URL + AUTH_ENDPOINTS.LOGIN);
+      
+      // Use direct axios call to avoid potential interceptor issues
+      const response = await axios({
+        method: 'post',
+        url: API_CONFIG.BASE_URL + AUTH_ENDPOINTS.LOGIN,
+        data: { email, password },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        timeout: API_CONFIG.TIMEOUT
+      });
+      
+      console.log('Login successful:', response.data);
       
       // Store token and user in localStorage
       localStorage.setItem(AUTH_CONFIG.TOKEN_KEY, response.data.token);

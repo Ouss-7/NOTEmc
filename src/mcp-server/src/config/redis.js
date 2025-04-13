@@ -7,7 +7,7 @@ let redisClient;
 class MockRedisClient {
   constructor() {
     this.data = new Map();
-    logger.info('Using Mock Redis Client');
+    logger.info('Using Mock Redis Client for development');
   }
 
   async connect() {
@@ -19,7 +19,7 @@ class MockRedisClient {
     return this.data.get(key);
   }
 
-  async set(key, value) {
+  async set(key, value, options = {}) {
     this.data.set(key, value);
     return 'OK';
   }
@@ -30,38 +30,68 @@ class MockRedisClient {
   }
 
   on(event, callback) {
-    // Do nothing for events in mock
+    if (event === 'connect') {
+      callback();
+    }
     return this;
   }
 }
 
 const connectRedis = async () => {
   try {
-    // Use mock Redis client if REDIS_URI is not provided
-    if (!process.env.REDIS_URI) {
-      logger.warn('REDIS_URI not provided. Using mock Redis client.');
+    // Use mock Redis client in development mode
+    if (process.env.NODE_ENV === 'development') {
+      logger.info('Development mode: Using mock Redis client');
       redisClient = new MockRedisClient();
       await redisClient.connect();
       return redisClient;
     }
 
-    // Use real Redis client if REDIS_URI is provided
+    // Use real Redis client in production
+    if (!process.env.REDIS_URI) {
+      throw new Error('REDIS_URI environment variable is required in production');
+    }
+
     redisClient = Redis.createClient({
-      url: process.env.REDIS_URI
+      url: process.env.REDIS_URI,
+      socket: {
+        reconnectStrategy: (retries) => {
+          if (retries > 10) {
+            logger.error('Redis connection failed after 10 retries');
+            return new Error('Redis connection failed');
+          }
+          return Math.min(retries * 100, 3000);
+        }
+      }
     });
 
     redisClient.on('error', (error) => {
       logger.error('Redis Client Error:', error);
     });
 
+    redisClient.on('connect', () => {
+      logger.info('Redis Client Connected');
+    });
+
+    redisClient.on('ready', () => {
+      logger.info('Redis Client Ready');
+    });
+
+    redisClient.on('end', () => {
+      logger.info('Redis Client Connection Ended');
+    });
+
     await redisClient.connect();
     return redisClient;
   } catch (error) {
     logger.error('Redis connection error:', error);
-    logger.warn('Falling back to mock Redis client');
-    redisClient = new MockRedisClient();
-    await redisClient.connect();
-    return redisClient;
+    if (process.env.NODE_ENV === 'development') {
+      logger.info('Falling back to mock Redis client');
+      redisClient = new MockRedisClient();
+      await redisClient.connect();
+      return redisClient;
+    }
+    throw error;
   }
 };
 

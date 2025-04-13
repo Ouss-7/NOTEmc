@@ -1,42 +1,47 @@
 const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const logger = require('../utils/logger');
 
-let mongoServer;
-
 /**
- * Connect to MongoDB Memory Server for development and testing
+ * Connect to MongoDB
  */
 async function connectDB() {
   try {
-    // Always use MongoDB Memory Server for simplicity and reliability
-    logger.info('Starting MongoDB Memory Server...');
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    
-    logger.info(`MongoDB Memory Server URI: ${mongoUri}`);
-    
-    await mongoose.connect(mongoUri, {
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI environment variable is required');
+    }
+
+    const options = {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      family: 4
+    };
+
+    await mongoose.connect(process.env.MONGODB_URI, options);
+    
+    logger.info('Connected to MongoDB successfully');
+    
+    // Set up connection event handlers
+    mongoose.connection.on('connected', () => {
+      logger.info('Mongoose connected to MongoDB');
     });
-    
-    logger.info('Connected to MongoDB Memory Server successfully');
-    
-    // Create a test document to verify connection
-    const testSchema = new mongoose.Schema({
-      name: String,
-      createdAt: { type: Date, default: Date.now }
+
+    mongoose.connection.on('error', (err) => {
+      logger.error('Mongoose connection error:', err);
     });
-    
-    // Only create the model if it doesn't exist
-    const TestModel = mongoose.models.Test || mongoose.model('Test', testSchema);
-    
-    // Create a test document
-    const testDoc = await TestModel.create({ name: 'Connection Test' });
-    logger.info(`Created test document with ID: ${testDoc._id}`);
-    
-    return mongoUri;
+
+    mongoose.connection.on('disconnected', () => {
+      logger.warn('Mongoose disconnected from MongoDB');
+    });
+
+    process.on('SIGINT', async () => {
+      await mongoose.connection.close();
+      logger.info('Mongoose connection closed through app termination');
+      process.exit(0);
+    });
+
+    return mongoose.connection;
   } catch (error) {
     logger.error(`MongoDB connection error: ${error.message}`);
     process.exit(1);
@@ -44,17 +49,12 @@ async function connectDB() {
 }
 
 /**
- * Disconnect from MongoDB and close Memory Server if applicable
+ * Disconnect from MongoDB
  */
 async function disconnectDB() {
   try {
     await mongoose.disconnect();
     logger.info('Disconnected from MongoDB');
-    
-    if (mongoServer) {
-      await mongoServer.stop();
-      logger.info('MongoDB Memory Server stopped');
-    }
   } catch (error) {
     logger.error(`Error disconnecting from MongoDB: ${error.message}`);
   }

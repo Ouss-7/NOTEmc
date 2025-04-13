@@ -5,46 +5,94 @@ const logger = require('../utils/logger');
 // Queue registry to keep track of all queues
 const queues = {};
 
-/**
- * Create a Redis client for Bull queue
- * @returns {Redis} Redis client
- */
-const createRedisClient = () => {
-  const redisConfig = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || '',
-    db: process.env.REDIS_DB || 0,
-    maxRetriesPerRequest: null,
-    enableReadyCheck: false
-  };
-  
-  return new Redis(redisConfig);
-};
+// In-memory queue for development mode
+class InMemoryQueue {
+  constructor(name) {
+    this.name = name;
+    this.jobs = [];
+    this.handlers = new Map();
+    this.events = new Map();
+    logger.info(`Created in-memory queue: ${name}`);
+  }
+
+  async add(data, options = {}) {
+    const job = {
+      id: Date.now().toString(),
+      data,
+      options,
+      timestamp: new Date()
+    };
+    this.jobs.push(job);
+    
+    // Process job immediately in development
+    if (this.handlers.has('process')) {
+      try {
+        const result = await this.handlers.get('process')(job);
+        this.emit('completed', job);
+        return result;
+      } catch (error) {
+        this.emit('failed', job, error);
+        throw error;
+      }
+    }
+    
+    return job;
+  }
+
+  process(handler) {
+    this.handlers.set('process', handler);
+  }
+
+  on(event, callback) {
+    if (!this.events.has(event)) {
+      this.events.set(event, []);
+    }
+    this.events.get(event).push(callback);
+  }
+
+  emit(event, ...args) {
+    if (this.events.has(event)) {
+      this.events.get(event).forEach(callback => callback(...args));
+    }
+  }
+
+  async clean() {
+    this.jobs = [];
+  }
+}
 
 /**
  * Create a new queue or return existing one
  * @param {string} name - Queue name
  * @param {Object} options - Queue options
- * @returns {Queue} Bull queue instance
+ * @returns {Queue|InMemoryQueue} Queue instance
  */
 const createQueue = (name, options = {}) => {
   if (queues[name]) {
     return queues[name];
   }
-  
+
+  // Use in-memory queue in development mode
+  if (process.env.NODE_ENV === 'development') {
+    const queue = new InMemoryQueue(name);
+    queues[name] = queue;
+    return queue;
+  }
+
+  // Use Bull queue in production
   const defaultOptions = {
     createClient: (type) => {
-      switch (type) {
-        case 'client':
-          return createRedisClient();
-        case 'subscriber':
-          return createRedisClient();
-        case 'bclient':
-          return createRedisClient();
-        default:
-          return createRedisClient();
-      }
+      const client = new Redis(process.env.REDIS_URI, {
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+        retryStrategy: (times) => {
+          if (times > 10) {
+            return new Error('Redis connection failed');
+          }
+          return Math.min(times * 100, 3000);
+        }
+      });
+      return client;
     },
     defaultJobOptions: {
       removeOnComplete: true,
@@ -56,29 +104,10 @@ const createQueue = (name, options = {}) => {
     },
     ...options
   };
-  
+
   const queue = new Queue(name, defaultOptions);
-  
-  // Set up event listeners
-  queue.on('failed', (job, error) => {
-    logger.error(`Job ${job.id} in queue ${name} failed:`, error);
-  });
-  
-  queue.on('completed', (job) => {
-    logger.info(`Job ${job.id} in queue ${name} completed successfully`);
-  });
-  
-  queue.on('stalled', (job) => {
-    logger.warn(`Job ${job.id} in queue ${name} is stalled`);
-  });
-  
-  queue.on('error', (error) => {
-    logger.error(`Queue ${name} error:`, error);
-  });
-  
-  // Store in registry
   queues[name] = queue;
-  
+
   return queue;
 };
 
@@ -100,7 +129,7 @@ const setupQueues = async () => {
         timeout: 180000 // 3 minutes timeout
       }
     });
-    
+
     // Create notification queue
     createQueue('notifications', {
       defaultJobOptions: {
@@ -113,7 +142,7 @@ const setupQueues = async () => {
         timeout: 30000 // 30 seconds timeout
       }
     });
-    
+
     logger.info('Queues initialized successfully');
   } catch (error) {
     logger.error('Queue setup error:', error);
@@ -124,7 +153,7 @@ const setupQueues = async () => {
 /**
  * Get a queue by name
  * @param {string} name - Queue name
- * @returns {Queue} Bull queue instance
+ * @returns {Queue|InMemoryQueue} Queue instance
  */
 const getQueue = (name) => {
   if (!queues[name]) {
@@ -134,19 +163,15 @@ const getQueue = (name) => {
 };
 
 /**
- * Clean all queues (remove completed, failed, and delayed jobs)
+ * Clean all queues
  * @returns {Promise<void>}
  */
 const cleanQueues = async () => {
   try {
     const cleanPromises = Object.values(queues).map(queue => 
-      Promise.all([
-        queue.clean(24 * 60 * 60 * 1000, 'completed'),
-        queue.clean(24 * 60 * 60 * 1000, 'failed'),
-        queue.clean(24 * 60 * 60 * 1000, 'delayed')
-      ])
+      queue.clean ? queue.clean(24 * 60 * 60 * 1000) : Promise.resolve()
     );
-    
+
     await Promise.all(cleanPromises);
     logger.info('All queues cleaned successfully');
   } catch (error) {

@@ -1,22 +1,25 @@
-# MCP (Model-Control-Processing) Server
+# MCP Server
 
-The MCP Server is a critical component of the Note Check-in Application, serving as the orchestration layer between the core note service and various AI tools.
+The Model-Control-Processing (MCP) Server is a core component of the Note Check-in Application. It provides AI-powered text processing capabilities through a microservices architecture.
 
 ## Features
 
-- Tool Registry Management
-- Processing Pipeline Orchestration
-- Result Caching
-- Rate Limiting
-- Error Handling
-- Logging and Monitoring
+- Text summarization
+- Sentiment analysis
+- Grammar checking
+- Job queue processing
+- Redis caching
+- MongoDB data storage
+- JWT authentication
+- Rate limiting
+- API documentation
 
 ## Prerequisites
 
 - Node.js v16+
-- MongoDB v5+
-- Redis v6+
-- Docker (optional)
+- MongoDB
+- Redis
+- npm or yarn
 
 ## Installation
 
@@ -25,55 +28,68 @@ The MCP Server is a critical component of the Note Check-in Application, serving
    ```bash
    npm install
    ```
-3. Copy `.env.example` to `.env` and configure environment variables:
+3. Copy `.env.example` to `.env` and update the configuration:
    ```bash
    cp .env.example .env
+   ```
+4. Start Redis server:
+   ```bash
+   redis-server
+   ```
+5. Seed the database with initial data:
+   ```bash
+   npm run seed
    ```
 
 ## Development
 
-Start the server in development mode:
+Start the development server with hot-reloading:
 ```bash
 npm run dev
 ```
 
 ## Testing
 
-Run the test suite:
+Run tests:
 ```bash
 npm test
 ```
 
+Run tests with coverage:
+```bash
+npm run test:coverage
+```
+
 ## API Documentation
 
-### Tool Management
+The API documentation is available at `/api-docs` when the server is running.
 
-- `GET /api/tools` - List all available tools
-- `POST /api/tools` - Register a new tool
-- `GET /api/tools/:id` - Get tool details
-- `PUT /api/tools/:id` - Update tool configuration
-- `DELETE /api/tools/:id` - Remove a tool
+## Project Structure
 
-### Processing
+```
+src/
+├── config/         # Configuration files
+├── controllers/    # Route controllers
+├── middleware/     # Custom middleware
+├── models/         # Mongoose models
+├── routes/         # API routes
+├── services/       # Business logic
+├── utils/          # Utility functions
+└── scripts/        # Utility scripts
+```
 
-- `POST /api/process` - Submit content for processing
-- `GET /api/process/:id` - Get processing status
-- `GET /api/process/:id/result` - Get processing results
+## Environment Variables
 
-## Architecture
-
-The MCP Server follows a microservices architecture pattern with:
-
-- Express.js for API endpoints
-- MongoDB for tool registry and results storage
-- Redis for caching and job queues
-- Bull for processing queue management
-
-## Contributing
-
-1. Create a feature branch
-2. Commit changes
-3. Submit a pull request
+- `PORT`: Server port (default: 3005)
+- `NODE_ENV`: Environment (development/production)
+- `MONGODB_URI`: MongoDB connection string
+- `REDIS_URI`: Redis connection string
+- `JWT_SECRET`: JWT secret key
+- `JWT_EXPIRES_IN`: JWT expiration time
+- `LOG_LEVEL`: Logging level
+- `RATE_LIMIT_WINDOW`: Rate limit window in minutes
+- `RATE_LIMIT_MAX`: Maximum requests per window
+- `CACHE_TTL`: Cache time-to-live in seconds
 
 ## License
 
